@@ -1,0 +1,20 @@
+#cloud-config
+
+coreos:
+  etcd2:
+    # https://discovery.etcd.io/new?size=3
+    discovery: https://discovery.etcd.io/c8662cdb448d395f4964d89f440c1751
+    advertise-client-urls: http://$private_ipv4:2379
+    initial-advertise-peer-urls: http://$private_ipv4:2380
+    listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+    listen-peer-urls: http://$private_ipv4:2380,http://$private_ipv4:7001
+  fleet:
+    public-ip: $public_ipv4
+    metadata: type=master,channel=beta
+  units:
+    - name: etcd2.service
+      command: start
+    - name: fleet.service
+      command: start
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA0S8+gsgt5N84ejEI5H3rZbRfsmjdiV4IdqC/tLMZYwcJ1lgv1XGqWI1uMat2X1xiprM3+pROGLdcMXhw7OW+milzqgj8axffGVRvDh0jUg2sR2DZNJmb1/Gqubagd0tM8Slb4fUjnA1S2sd3LhplzMcvQ6C64K90U5BpyfpFeHhtxP0VrWh1yqNAsO+m2NMzU34pi3ILI0qW3a5sqXO45e8I0KrewNQqzYWsIxB5IS2Y8g4WwQAIWk+98Nc5RZ25Smzip/npeMx/uGlfbNwZGQvs1tlCmsr0/uNnno79xj6hmd6Z1/h8oXbc9JxU9DoWI1HRNl1PuSpnNrE0tj28pw==
