@@ -10,7 +10,7 @@ variable "gce_slave_instance_count" {
 
 variable "gce_account_file" {
     description = "Path to your GCE account credentials file"
-    default = "gce_account_sisprev.json"
+    default = "gce_account.json"
 }
 
 variable "gce_project_name" {
