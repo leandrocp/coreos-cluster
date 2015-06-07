@@ -1,10 +1,10 @@
-variable "gce_master_instance_count" {
-    description = "Number of master instances in GCE"
+variable "gce_leader_instance_count" {
+    description = "Number of leader instances in GCE"
     default = 3
 }
 
-variable "gce_slave_instance_count" {
-    description = "Number of slave instances in GCE"
+variable "gce_follower_instance_count" {
+    description = "Number of follower instances in GCE"
     default = 1
 }
 

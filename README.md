@@ -9,7 +9,7 @@ CoreOS Cluster including:
 
 ## Setup
 * Create a Google Cloud Account (we get 2 months for free)
-* Create a new token at https://discovery.etcd.io/new?size=3 and replace on `cloud-config-master.yaml`:
+* Create a new token at https://discovery.etcd.io/new?size=3 and replace on `cloud-config-leader.yaml`:
 ```
     discovery: https://discovery.etcd.io/your_token_here
 ```

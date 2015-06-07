@@ -43,13 +43,13 @@ resource "google_compute_firewall" "internal" {
   source_ranges = ["${google_compute_network.coreos.ipv4_range}"]
 }
 
-resource "google_compute_instance" "coreos-master" {
+resource "google_compute_instance" "coreos-leader" {
   count = 3
-  name = "coreos-master-${count.index}"
-  description = "Instancia Master do cluster CoreOS beta. Com etcd e consul server"
+  name = "coreos-leader-${count.index}"
+  description = "Leader instance of cluster"
   machine_type = "${var.gce_machine_type}"
   zone = "${var.gce_zone}"
-  tags = ["coreos", "beta", "master", "etcd", "consul", "http-server"]
+  tags = ["coreos", "beta", "leader", "etcd", "consul", "http-server"]
 
   # boot disk
   disk {
@@ -64,18 +64,18 @@ resource "google_compute_instance" "coreos-master" {
   }
 
   metadata {
-    user-data = "${file("cloud-config-master.yaml")}"
+    user-data = "${file("cloud-config-leader.yaml")}"
   }
 }
 
-output "master_name" {
-  value = "${join(", ", google_compute_instance.coreos-master.*.name)}"
+output "leader_name" {
+  value = "${join(", ", google_compute_instance.coreos-leader.*.name)}"
 }
 
-output "master_private_address" {
-  value = "${join(", ", google_compute_instance.coreos-master.*.network_interface.0.address)}"
+output "leader_private_address" {
+  value = "${join(", ", google_compute_instance.coreos-leader.*.network_interface.0.address)}"
 }
 
-output "master_public_address" {
-  value = "${join(", ", google_compute_instance.coreos-master.*.network_interface.0.access_config.0.nat_ip)}"
+output "leader_public_address" {
+  value = "${join(", ", google_compute_instance.coreos-leader.*.network_interface.0.access_config.0.nat_ip)}"
 }
