@@ -13,6 +13,7 @@ CoreOS Cluster including:
     discovery: https://discovery.etcd.io/your_token_here
 ```
 * Log into https://console.developers.google.com/ and go to `APIs & auth > Credentials`. Click on `Create a new OAuth client ID` and select "Service account". Save the downloaded file as `gce_account.json` in the same dir of this project.
+* You should review `variables.tf` especially `variable "gce_project_name"` which must be the name of a valid google cloud project. See: https://console.developers.google.com/project. And not forget to enable billing, it's obligatory.
 * Run
 ```
 terraform apply
