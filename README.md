@@ -1,13 +1,14 @@
 # CoreOS Cluster
 CoreOS Cluster including:
-* coreos beta
-* etcd
-* consul
+* [coreos beta](https://coreos.com/blog/coreos-beta-release/)
+* [etcd2](https://github.com/coreos/etcd)
+* [fleet](https://github.com/coreos/fleet)
+* [consul](http://consul.io/)
 * service registrator
-* google cloud provider
+* [google cloud provider](https://cloud.google.com/)
 
 ## Setup
-* Create a Google Cloud Account
+* Create a Google Cloud Account (we get 2 months for free)
 * Create a new token at https://discovery.etcd.io/new?size=3 and replace on `cloud-config-master.yaml`:
 ```
     discovery: https://discovery.etcd.io/your_token_here
