@@ -3,7 +3,7 @@
 
 coreos:
   etcd:
-    discovery: https://discovery.etcd.io/5da7dfe31841f789794fe120014677ea
+    discovery: https://discovery.etcd.io/a9ea139320d0c9c78fcf303352fdf361
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
   fleet:
@@ -96,12 +96,37 @@ coreos:
         [X-Fleet]
         Global=true
         MachineMetadata=role=leader
+    - name: haproxy.service
+      command: start
+      content: |
+        [Unit]
+        Description=HAProxy Load Balancer
+        After=registrator.service
+        [Service]
+        TimeoutSec=2m
+        RestartSec=2m
+        Restart=on-failure
+        EnvironmentFile=/etc/environment
+        ExecStartPre=-/usr/bin/docker kill haproxy
+        ExecStartPre=-/usr/bin/docker rm haproxy
+        ExecStartPre=/usr/bin/docker pull asteris/haproxy-consul
+        ExecStart=/bin/sh -c "sleep 60; \
+          exec /usr/bin/docker run \
+          --name haproxy \
+          --net host \
+          -e HAPROXY_DOMAIN=$COREOS_PUBLIC_IPV4.xip.io \
+          -e CONSUL_CONNECT=$COREOS_PRIVATE_IPV4:8500 \
+          asteris/haproxy-consul"
+        ExecStop=/usr/bin/docker stop haproxy
+        [X-Fleet]
+        Global=true
+        MachineMetadata=role=leader
     - name: cadvisor.service
       command: start
       content: |
         [Unit]
         Description=cAdvisor
-        After=cadvisor.service
+        After=docker.service
         [Service]
         Restart=on-failure
         ExecStartPre=-/usr/bin/docker kill cadvisor
@@ -115,7 +140,7 @@ coreos:
           --volume=/var/lib/docker/:/var/lib/docker:ro \
           --name=cadvisor \
           -e SERVICE_NAME=cadvisor \
-          -P \
+          -p 8080:8080 \
           google/cadvisor"
         ExecStop=/usr/bin/docker stop cadvisor
         [X-Fleet]
