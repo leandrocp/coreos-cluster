@@ -2,14 +2,8 @@
 # https://discovery.etcd.io/new?size=3
 
 coreos:
-  #etcd2:
-  #discovery: https://discovery.etcd.io/e72d7524b958490d2d3378a7d34bfd0d
-  #advertise-client-urls: http://$private_ipv4:2379
-  #initial-advertise-peer-urls: http://$private_ipv4:2380
-  #listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
-  #listen-peer-urls: http://$private_ipv4:2380,http://$private_ipv4:7001
   etcd:
-    discovery: https://discovery.etcd.io/c1e73b98d01027073839c6fa72e9d5ed
+    discovery: https://discovery.etcd.io/5da7dfe31841f789794fe120014677ea
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
   fleet:
@@ -99,6 +93,31 @@ coreos:
           -v /var/run/docker.sock:/tmp/docker.sock \
           gliderlabs/registrator consul://$COREOS_PRIVATE_IPV4:8500"
         ExecStop=/usr/bin/docker stop registrator
+        [X-Fleet]
+        Global=true
+        MachineMetadata=role=leader
+    - name: cadvisor.service
+      command: start
+      content: |
+        [Unit]
+        Description=cAdvisor
+        After=cadvisor.service
+        [Service]
+        Restart=on-failure
+        ExecStartPre=-/usr/bin/docker kill cadvisor
+        ExecStartPre=-/usr/bin/docker rm cadvisor
+        ExecStartPre=/usr/bin/docker pull google/cadvisor
+        ExecStart=/bin/sh -c "sleep 60; \
+          exec /usr/bin/docker run \
+          --volume=/:/rootfs:ro \
+          --volume=/var/run:/var/run:rw \
+          --volume=/sys:/sys:ro \
+          --volume=/var/lib/docker/:/var/lib/docker:ro \
+          --name=cadvisor \
+          -e SERVICE_NAME=cadvisor \
+          -P \
+          google/cadvisor"
+        ExecStop=/usr/bin/docker stop cadvisor
         [X-Fleet]
         Global=true
         MachineMetadata=role=leader
