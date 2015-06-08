@@ -1,11 +1,11 @@
-resource "google_compute_network" "coreos" {
-  name = "coreos"
+resource "google_compute_network" "core" {
+  name = "core"
   ipv4_range = "10.0.0.0/16"
 }
 
 resource "google_compute_firewall" "external" {
   name = "external"
-  network = "${google_compute_network.coreos.name}"
+  network = "${google_compute_network.core.name}"
 
   allow {
     protocol = "icmp"
@@ -13,7 +13,7 @@ resource "google_compute_firewall" "external" {
 
   allow {
     protocol = "tcp"
-    ports = ["22", "80"]
+    ports = ["22", "80", "8080", "8500"]
   }
 
   allow {
@@ -26,7 +26,7 @@ resource "google_compute_firewall" "external" {
 
 resource "google_compute_firewall" "internal" {
   name = "internal"
-  network = "${google_compute_network.coreos.name}"
+  network = "${google_compute_network.core.name}"
 
   allow {
     protocol = "icmp"
@@ -40,12 +40,12 @@ resource "google_compute_firewall" "internal" {
     protocol = "tcp"
   }
 
-  source_ranges = ["${google_compute_network.coreos.ipv4_range}"]
+  source_ranges = ["${google_compute_network.core.ipv4_range}"]
 }
 
-resource "google_compute_instance" "coreos-leader" {
+resource "google_compute_instance" "core-leader" {
   count = 3
-  name = "coreos-leader-${count.index}"
+  name = "core-leader-${count.index}"
   description = "Leader instance of cluster"
   machine_type = "${var.gce_machine_type}"
   zone = "${var.gce_zone}"
@@ -57,7 +57,7 @@ resource "google_compute_instance" "coreos-leader" {
   }
 
   network_interface {
-    network = "${google_compute_network.coreos.name}"
+    network = "${google_compute_network.core.name}"
     access_config {
       // ephemeral IP
     }
@@ -69,13 +69,13 @@ resource "google_compute_instance" "coreos-leader" {
 }
 
 output "leader_name" {
-  value = "${join(", ", google_compute_instance.coreos-leader.*.name)}"
+  value = "${join(", ", google_compute_instance.core-leader.*.name)}"
 }
 
 output "leader_private_address" {
-  value = "${join(", ", google_compute_instance.coreos-leader.*.network_interface.0.address)}"
+  value = "${join(", ", google_compute_instance.core-leader.*.network_interface.0.address)}"
 }
 
 output "leader_public_address" {
-  value = "${join(", ", google_compute_instance.coreos-leader.*.network_interface.0.access_config.0.nat_ip)}"
+  value = "${join(", ", google_compute_instance.core-leader.*.network_interface.0.access_config.0.nat_ip)}"
 }
