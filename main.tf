@@ -49,7 +49,7 @@ resource "google_compute_instance" "core-leader" {
   description = "Leader instance of cluster"
   machine_type = "${var.gce_machine_type}"
   zone = "${var.gce_zone}"
-  tags = ["coreos", "beta", "leader", "etcd", "consul", "http-server"]
+  tags = ["coreos", "stable", "leader", "etcd", "consul", "http-server"]
 
   # boot disk
   disk {

@@ -35,7 +35,7 @@ variable "gce_key_path" {
 
 variable "gce_coreos_disk_image" {
     description = "Name of CoreOS Root disk image for the GCE instances to use"
-    default = "coreos-beta-681-0-0-v20150527"
+    default = "coreos-stable-647-2-0-v20150528"
 }
 
 variable "gce_machine_type" {
