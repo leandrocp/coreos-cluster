@@ -141,6 +141,7 @@ coreos:
           --dns 172.17.42.1 \
           --dns 8.8.8.8 \
           --dns-search service.consul \
+          -e SERVICE_IGNORE=true \
           -e HAPROXY_DOMAIN=$COREOS_PUBLIC_IPV4.xip.io \
           -v /haproxy/haproxy.ctmpl:/haproxy.ctmpl \
           -p 80:80 \
@@ -156,7 +157,7 @@ write_files:
   - path: /etc/systemd/system/docker.service.d/50-dns-params.conf
     content: |
       [Service]
-      Environment='DOCKER_OPTS=--dns 172.17.42.1 --dns 8.8.8.8 --dns-search service.consul'
+      Environment='DOCKER_OPTS=--insecure-registry 10.0.0.0/16 --dns 172.17.42.1 --dns 8.8.8.8 --dns-search service.consul'
   - path: /haproxy/haproxy.ctmpl
     content: |
       # DO NOT EDIT
