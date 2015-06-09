@@ -3,7 +3,7 @@
 
 coreos:
   etcd:
-    discovery: https://discovery.etcd.io/a9ea139320d0c9c78fcf303352fdf361
+    discovery: https://discovery.etcd.io/b0501f4f01f0d1cf1172c4b4c4a2e3af
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
   fleet:
@@ -96,31 +96,6 @@ coreos:
         [X-Fleet]
         Global=true
         MachineMetadata=role=leader
-    - name: haproxy.service
-      command: start
-      content: |
-        [Unit]
-        Description=HAProxy Load Balancer
-        After=registrator.service
-        [Service]
-        TimeoutSec=2m
-        RestartSec=2m
-        Restart=on-failure
-        EnvironmentFile=/etc/environment
-        ExecStartPre=-/usr/bin/docker kill haproxy
-        ExecStartPre=-/usr/bin/docker rm haproxy
-        ExecStartPre=/usr/bin/docker pull asteris/haproxy-consul
-        ExecStart=/bin/sh -c "sleep 60; \
-          exec /usr/bin/docker run \
-          --name haproxy \
-          --net host \
-          -e HAPROXY_DOMAIN=$COREOS_PUBLIC_IPV4.xip.io \
-          -e CONSUL_CONNECT=$COREOS_PRIVATE_IPV4:8500 \
-          asteris/haproxy-consul"
-        ExecStop=/usr/bin/docker stop haproxy
-        [X-Fleet]
-        Global=true
-        MachineMetadata=role=leader
     - name: cadvisor.service
       command: start
       content: |
@@ -146,12 +121,71 @@ coreos:
         [X-Fleet]
         Global=true
         MachineMetadata=role=leader
+    - name: haproxy.service
+      command: start
+      content: |
+        [Unit]
+        Description=HAProxy Load Balancer
+        After=consul.service
+        [Service]
+        TimeoutSec=1m
+        RestartSec=1m
+        Restart=on-failure
+        EnvironmentFile=/etc/environment
+        ExecStartPre=-/usr/bin/docker kill haproxy
+        ExecStartPre=-/usr/bin/docker rm haproxy
+        ExecStartPre=/usr/bin/docker pull cargonauts/consul-haproxy
+        ExecStart=/bin/sh -c "sleep 60; \
+          exec /usr/bin/docker run \
+          --name haproxy \
+          --dns 172.17.42.1 \
+          --dns 8.8.8.8 \
+          --dns-search service.consul \
+          -e HAPROXY_DOMAIN=$COREOS_PUBLIC_IPV4.xip.io \
+          -v /haproxy/haproxy.ctmpl:/haproxy.ctmpl \
+          -p 80:80 \
+          cargonauts/consul-haproxy \
+          -consul $COREOS_PRIVATE_IPV4:8500 \
+          -template \"/haproxy.ctmpl:/etc/haproxy/haproxy.cfg:service haproxy reload\""
+        ExecStop=/usr/bin/docker stop haproxy
+        [X-Fleet]
+        Global=true
+        MachineMetadata=role=leader
 
 write_files:
   - path: /etc/systemd/system/docker.service.d/50-dns-params.conf
     content: |
       [Service]
       Environment='DOCKER_OPTS=--dns 172.17.42.1 --dns 8.8.8.8 --dns-search service.consul'
+  - path: /haproxy/haproxy.ctmpl
+    content: |
+      # DO NOT EDIT
+      # Generated automatically by consul-template
+      global
+          maxconn {{or (key "service/haproxy/maxconn") 256}}
+          debug
 
+      defaults
+          mode http
+          timeout connect {{or (key "service/haproxy/timeouts/connect") "5000ms"}}
+          timeout client {{or (key "service/haproxy/timeouts/client") "50000ms"}}
+          timeout server {{or (key "service/haproxy/timeouts/server") "50000ms"}}
+          stats enable
+          stats uri /haproxy?stats
+
+      frontend www
+          bind *:80
+
+      {{ range services }}
+          acl host_{{ .Name }} hdr(host) -i {{ .Name }}.{{ or (env "HAPROXY_DOMAIN") "haproxy.service.consul" }}
+          use_backend {{ .Name }}_backend if host_{{ .Name }}
+      {{ end }}
+
+      {{ range services }}
+      backend {{ .Name }}_backend
+      {{ range service .Name }}
+        server {{ .Node }} {{ .Address }}:{{ .Port }}{{ end }}
+      {{ end }}
+      
 ssh_authorized_keys:
   - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA0S8+gsgt5N84ejEI5H3rZbRfsmjdiV4IdqC/tLMZYwcJ1lgv1XGqWI1uMat2X1xiprM3+pROGLdcMXhw7OW+milzqgj8axffGVRvDh0jUg2sR2DZNJmb1/Gqubagd0tM8Slb4fUjnA1S2sd3LhplzMcvQ6C64K90U5BpyfpFeHhtxP0VrWh1yqNAsO+m2NMzU34pi3ILI0qW3a5sqXO45e8I0KrewNQqzYWsIxB5IS2Y8g4WwQAIWk+98Nc5RZ25Smzip/npeMx/uGlfbNwZGQvs1tlCmsr0/uNnno79xj6hmd6Z1/h8oXbc9JxU9DoWI1HRNl1PuSpnNrE0tj28pw==
