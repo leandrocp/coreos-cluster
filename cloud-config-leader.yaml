@@ -3,7 +3,7 @@
 
 coreos:
   etcd:
-    discovery: https://discovery.etcd.io/b0501f4f01f0d1cf1172c4b4c4a2e3af
+    discovery: https://discovery.etcd.io/26810612928808eb21594d8c7bb499d0
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
   fleet:
@@ -86,8 +86,7 @@ coreos:
         ExecStartPre=-/usr/bin/docker kill registrator
         ExecStartPre=-/usr/bin/docker rm registrator
         ExecStartPre=/usr/bin/docker pull gliderlabs/registrator
-        ExecStart=/bin/sh -c "sleep 60; \
-          exec /usr/bin/docker run \
+        ExecStart=/bin/sh -c "exec /usr/bin/docker run \
           --name registrator \
           --hostname %H \
           -v /var/run/docker.sock:/tmp/docker.sock \
@@ -107,8 +106,7 @@ coreos:
         ExecStartPre=-/usr/bin/docker kill cadvisor
         ExecStartPre=-/usr/bin/docker rm cadvisor
         ExecStartPre=/usr/bin/docker pull google/cadvisor
-        ExecStart=/bin/sh -c "sleep 60; \
-          exec /usr/bin/docker run \
+        ExecStart=/bin/sh -c "exec /usr/bin/docker run \
           --volume=/:/rootfs:ro \
           --volume=/var/run:/var/run:rw \
           --volume=/sys:/sys:ro \
@@ -135,19 +133,17 @@ coreos:
         ExecStartPre=-/usr/bin/docker kill haproxy
         ExecStartPre=-/usr/bin/docker rm haproxy
         ExecStartPre=/usr/bin/docker pull cargonauts/consul-haproxy
-        ExecStart=/bin/sh -c "sleep 60; \
-          exec /usr/bin/docker run \
+        ExecStart=/bin/sh -c "exec /usr/bin/docker run \
           --name haproxy \
           --dns 172.17.42.1 \
           --dns 8.8.8.8 \
           --dns-search service.consul \
           -e SERVICE_IGNORE=true \
-          -e HAPROXY_DOMAIN=$COREOS_PUBLIC_IPV4.xip.io \
           -v /haproxy/haproxy.ctmpl:/haproxy.ctmpl \
           -p 80:80 \
           cargonauts/consul-haproxy \
           -consul $COREOS_PRIVATE_IPV4:8500 \
-          -template \"/haproxy.ctmpl:/etc/haproxy/haproxy.cfg:service haproxy reload\""
+          -template \"/haproxy.ctmpl:/etc/haproxy/haproxy.cfg:service haproxy reload || true\""
         ExecStop=/usr/bin/docker stop haproxy
         [X-Fleet]
         Global=true
@@ -180,17 +176,23 @@ write_files:
 
       frontend www
           bind *:80
-
-      {{ range services }}
-          acl host_{{ .Name }} hdr(host) -i {{ .Name }}.{{ or (env "HAPROXY_DOMAIN") "haproxy.service.consul" }}
-          use_backend {{ .Name }}_backend if host_{{ .Name }}
-      {{ end }}
-
-      {{ range services }}
-      backend {{ .Name }}_backend
-      {{ range service .Name }}
-        server {{ .Node }} {{ .Address }}:{{ .Port }}{{ end }}
-      {{ end }}
       
+      {{ range services }}{{ $name := .Name }}{{ $publish := key (print "service/" $name "/publish") }}{{ if or (eq $publish "public") (eq $publish "auth") }}
+          acl host_{{ $name }} hdr(host) -i {{ or (key (print "service/" $name "/domain")) "invalid-domain" }}
+          use_backend {{ $name }}_backend if host_{{ $name }}
+      {{ end }}{{ end }}
+
+      {{ range services }}{{ $name := .Name }}{{ $publish := key (print "service/" $name "/publish") }}{{ if (eq $publish "auth") }}
+      backend {{ $name }}_backend{{ range service $name }}
+          acl acl_auth http_auth(acl_users)
+          http-request auth realm Auth if !acl_auth
+          server {{ .Node }} {{ .Address }}:{{ .Port }}
+      {{ end }}{{ end }}{{ end }}
+
+      {{ range services }}{{ $name := .Name }}{{ $publish := key (print "service/" $name "/publish") }}{{ if (eq $publish "public") }}
+      backend {{ $name }}_backend{{ range service $name }}
+          server {{ .Node }} {{ .Address }}:{{ .Port }}
+      {{ end }}{{ end }}{{ end }}
+
 ssh_authorized_keys:
   - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA0S8+gsgt5N84ejEI5H3rZbRfsmjdiV4IdqC/tLMZYwcJ1lgv1XGqWI1uMat2X1xiprM3+pROGLdcMXhw7OW+milzqgj8axffGVRvDh0jUg2sR2DZNJmb1/Gqubagd0tM8Slb4fUjnA1S2sd3LhplzMcvQ6C64K90U5BpyfpFeHhtxP0VrWh1yqNAsO+m2NMzU34pi3ILI0qW3a5sqXO45e8I0KrewNQqzYWsIxB5IS2Y8g4WwQAIWk+98Nc5RZ25Smzip/npeMx/uGlfbNwZGQvs1tlCmsr0/uNnno79xj6hmd6Z1/h8oXbc9JxU9DoWI1HRNl1PuSpnNrE0tj28pw==
