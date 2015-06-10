@@ -3,6 +3,10 @@ resource "google_compute_network" "core" {
   ipv4_range = "10.0.0.0/16"
 }
 
+resource "google_compute_address" "core" {
+  name = "public-ip"
+}
+
 resource "google_compute_firewall" "external" {
   name = "external"
   network = "${google_compute_network.core.name}"
@@ -44,7 +48,7 @@ resource "google_compute_firewall" "internal" {
 }
 
 resource "google_compute_instance" "core-leader" {
-  count = 3
+  count = "${var.gce_leader_instance_count}"
   name = "core-leader-${count.index}"
   description = "Leader instance of cluster"
   machine_type = "${var.gce_machine_type}"
@@ -66,6 +70,32 @@ resource "google_compute_instance" "core-leader" {
   metadata {
     user-data = "${file("cloud-config-leader.yaml")}"
   }
+}
+
+resource "google_compute_http_health_check" "leader-health-check" {
+  name = "leader-health-check"
+  description = "Check Leader Pool - GET /health_check each 5sec"
+  request_path = "/health_check"
+  check_interval_sec = 5
+  timeout_sec = 5
+}
+
+resource "google_compute_target_pool" "leader-target-pool" {
+  name = "leader-target-pool"
+  instances = [ "${formatlist("%s/%s", google_compute_instance.core-leader.*.zone, google_compute_instance.core-leader.*.name)}" ]
+  health_checks = [ "${google_compute_http_health_check.leader-health-check.name}" ]
+}
+
+resource "google_compute_forwarding_rule" "leader-forward-pool" {
+  name = "leader-forward-pool"
+  description = "Forward requests from public-ip to Leader Pool"
+  ip_address = "${google_compute_address.core.address}"
+  target = "${google_compute_target_pool.leader-target-pool.self_link}"
+  port_range = "22-9000"
+}
+
+output "public-ip" {
+  value = "${google_compute_address.core.address}"
 }
 
 output "leader_name" {

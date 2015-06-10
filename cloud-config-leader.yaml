@@ -173,6 +173,10 @@ write_files:
           timeout server {{or (key "service/haproxy/timeouts/server") "50000ms"}}
           stats enable
           stats uri /haproxy?stats
+          monitor-uri /health_check
+
+      userlist acl_users{{range ls "acl/users"}}
+          user {{.Key}} insecure-password {{.Value}}{{end}}
 
       frontend www
           bind *:80
