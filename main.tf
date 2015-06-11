@@ -86,12 +86,20 @@ resource "google_compute_target_pool" "leader-target-pool" {
   health_checks = [ "${google_compute_http_health_check.leader-health-check.name}" ]
 }
 
-resource "google_compute_forwarding_rule" "leader-forward-pool" {
-  name = "leader-forward-pool"
-  description = "Forward requests from public-ip to Leader Pool"
+resource "google_compute_forwarding_rule" "leader-forward-pool-http" {
+  name = "leader-forward-pool-http"
+  description = "Forward HTTP/80 requests from public-ip to Leader Pool"
   ip_address = "${google_compute_address.core.address}"
   target = "${google_compute_target_pool.leader-target-pool.self_link}"
-  port_range = "22-9000"
+  port_range = "80"
+}
+
+resource "google_compute_forwarding_rule" "leader-forward-pool-https" {
+  name = "leader-forward-pool-https"
+  description = "Forward HTTPS/443 requests from public-ip to Leader Pool"
+  ip_address = "${google_compute_address.core.address}"
+  target = "${google_compute_target_pool.leader-target-pool.self_link}"
+  port_range = "443"
 }
 
 output "public-ip" {
