@@ -3,7 +3,7 @@
 
 coreos:
   etcd:
-    discovery: https://discovery.etcd.io/generate_new_token
+    discovery: https://discovery.etcd.io/token
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
   fleet:
@@ -173,10 +173,19 @@ write_files:
 
       userlist acl_users{{range ls "acl/users"}}
           user {{.Key}} insecure-password {{.Value}}{{end}}
+          user admin insecure-password {{ or (key "service/consul/admin_password") "changeme123" }}
 
       frontend www
           bind *:80
       
+          acl host_consul hdr_beg(host) -i consul.
+          use_backend consul_backend if host_consul
+
+      {{ range $index, $element := service "cadvisor" }}
+          acl host_{{ .Name }}_{{ $index }} hdr_beg(host) -i cadvisor.core{{ $index }}.
+          use_backend cadvisor_core_{{ $index }} if host_{{ .Name }}_{{ $index }}
+      {{ end }}
+
       {{ range services }}{{ $name := .Name }}{{ $publish := key (print "service/" $name "/publish") }}{{ if or (eq $publish "public") (eq $publish "auth") }}
           acl host_{{ $name }} hdr(host) -i {{ or (key (print "service/" $name "/domain")) "invalid-domain" }}
           use_backend {{ $name }}_backend if host_{{ $name }}
@@ -194,6 +203,17 @@ write_files:
           server {{ .Node }} {{ .Address }}:{{ .Port }}
       {{ end }}{{ end }}{{ end }}
 
-# PUT LIST OF AUTHORIZED SSH KEYS
+      backend consul_backend
+          acl acl_auth http_auth(acl_users)
+          http-request auth realm Auth if !acl_auth{{ range service "consul" }}
+          server {{ .Node }} {{ .Address }}:8500{{ end }}
+
+      {{ range $index, $element := service "cadvisor" }}
+      backend cadvisor_core_{{ $index }}
+          acl acl_auth http_auth(acl_users)
+          http-request auth realm Auth if !acl_auth
+          server {{ .Node }} {{ .Address }}:{{ .Port }}
+      {{ end }}
+
 ssh_authorized_keys:
-  - ssh-rsa AAAAB........
+  - ssh-rsa ...

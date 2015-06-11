@@ -17,7 +17,7 @@ resource "google_compute_firewall" "external" {
 
   allow {
     protocol = "tcp"
-    ports = ["22", "80", "8080", "8500"]
+    ports = ["22", "80", "443"]
   }
 
   allow {
@@ -53,11 +53,12 @@ resource "google_compute_instance" "core-leader" {
   description = "Leader instance of cluster"
   machine_type = "${var.gce_machine_type}"
   zone = "${var.gce_zone}"
-  tags = ["coreos", "stable", "leader", "etcd", "consul", "http-server"]
+  tags = ["coreos", "stable", "leader", "etcd", "consul", "haproxy"]
 
   # boot disk
   disk {
     image = "${var.gce_coreos_disk_image}"
+    size = 30
   }
 
   network_interface {
@@ -70,6 +71,13 @@ resource "google_compute_instance" "core-leader" {
   metadata {
     user-data = "${file("cloud-config-leader.yaml")}"
   }
+}
+
+resource "google_compute_disk" "core-disk" {
+  count = "${var.gce_disk_additional_count}"
+  name = "core-disk-${count.index}"
+  size = "${var.gce_disk_additional_size}"
+  zone = "${var.gce_zone}"
 }
 
 resource "google_compute_http_health_check" "leader-health-check" {
@@ -119,5 +127,5 @@ output "leader_public_address" {
 }
 
 output "fleetctl_remote" {
-  value = "fleetctl --tunnel ${google_compute_address.core.address}"
+  value = "fleetctl --tunnel ${google_compute_instance.core-leader.0.network_interface.0.access_config.0.nat_ip}"
 }
