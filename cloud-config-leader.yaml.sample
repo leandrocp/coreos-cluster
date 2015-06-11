@@ -3,7 +3,7 @@
 
 coreos:
   etcd:
-    discovery: https://discovery.etcd.io/31aae2be0720dfb47053f12929427db9
+    discovery: https://discovery.etcd.io/generate_new_token
     addr: $private_ipv4:4001
     peer-addr: $private_ipv4:7001
   fleet:
@@ -194,5 +194,6 @@ write_files:
           server {{ .Node }} {{ .Address }}:{{ .Port }}
       {{ end }}{{ end }}{{ end }}
 
+# PUT LIST OF AUTHORIZED SSH KEYS
 ssh_authorized_keys:
-  - ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA0S8+gsgt5N84ejEI5H3rZbRfsmjdiV4IdqC/tLMZYwcJ1lgv1XGqWI1uMat2X1xiprM3+pROGLdcMXhw7OW+milzqgj8axffGVRvDh0jUg2sR2DZNJmb1/Gqubagd0tM8Slb4fUjnA1S2sd3LhplzMcvQ6C64K90U5BpyfpFeHhtxP0VrWh1yqNAsO+m2NMzU34pi3ILI0qW3a5sqXO45e8I0KrewNQqzYWsIxB5IS2Y8g4WwQAIWk+98Nc5RZ25Smzip/npeMx/uGlfbNwZGQvs1tlCmsr0/uNnno79xj6hmd6Z1/h8oXbc9JxU9DoWI1HRNl1PuSpnNrE0tj28pw==
+  - ssh-rsa AAAAB........
