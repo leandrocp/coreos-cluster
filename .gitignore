@@ -1,5 +1,7 @@
 tags
 gce_account.json
 gce_account_sisprev.json
+variables.tf
+cloud-config-leader.yaml
 *.tfstate
 *.backup

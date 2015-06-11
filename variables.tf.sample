@@ -28,11 +28,6 @@ variable "gce_zone" {
     default = "us-central1-b"
 }
 
-variable "gce_key_path" {
-    description = "Path to private SSH key for the GCE instances"
-    default = "~/.ssh/google_compute_engine"
-}
-
 variable "gce_coreos_disk_image" {
     description = "Name of CoreOS Root disk image for the GCE instances to use"
     default = "coreos-stable-647-2-0-v20150528"

@@ -117,3 +117,7 @@ output "leader_private_address" {
 output "leader_public_address" {
   value = "${join(", ", google_compute_instance.core-leader.*.network_interface.0.access_config.0.nat_ip)}"
 }
+
+output "fleetctl_remote" {
+  value = "fleetctl --tunnel ${google_compute_address.core.address}"
+}
