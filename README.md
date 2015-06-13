@@ -17,11 +17,12 @@ CoreOS Cluster including:
 * Rename sample files
 * You should review both sample files, especially `variable "gce_project_name"` which must be the name of a valid google cloud project. See: https://console.developers.google.com/project.
 * Do not forget to enable billing, it's obligatory.
+* Default credentials: admin/changeme123
 * Run
 ```
 terraform apply
 ```
 
-## TODO
-* Add [consul](http://consul.io/)
-* Add a service discover registrator
+## Todo & Ideas
+* Support AWS
+* Add logging management 
