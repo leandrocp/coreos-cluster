@@ -156,6 +156,16 @@ write_files:
     content: |
       [Service]
       Environment='DOCKER_OPTS=--insecure-registry 10.0.0.0/16 --dns 172.17.42.1 --dns 8.8.8.8 --dns-search service.consul'
+  - path: /home/core/.dockercfg
+    owner: core:core
+    permissions: 0644
+    content: |
+      {
+        "quay.io": {
+          "auth": "xxxxxxxxxx",
+          "email": "username@example.com"
+        }
+      }
   - path: /haproxy/haproxy.ctmpl
     content: |
       # DO NOT EDIT
