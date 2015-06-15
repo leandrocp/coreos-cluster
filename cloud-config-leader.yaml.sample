@@ -2,14 +2,16 @@
 # https://discovery.etcd.io/new?size=3
 
 coreos:
-  etcd:
-    discovery: https://discovery.etcd.io/5e67c1b26f125d7e17bd33aebd12f63d
-    addr: $private_ipv4:4001
-    peer-addr: $private_ipv4:7001
+  etcd2:
+    discovery: https://discovery.etcd.io/36090f98d0c07cf10909d556311372aa
+    advertise-client-urls: http://$private_ipv4:2379
+    initial-advertise-peer-urls: http://$private_ipv4:2380
+    listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+    listen-peer-urls: http://$private_ipv4:2380,http://$private_ipv4:7001
   fleet:
     metadata: role=leader,channel=stable
   units:
-    - name: etcd.service
+    - name: etcd2.service
       command: start
     - name: fleet.service
       command: start

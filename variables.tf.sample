@@ -40,7 +40,7 @@ variable "gce_zone" {
 
 variable "gce_coreos_disk_image" {
     description = "Name of CoreOS Root disk image for the GCE instances to use"
-    default = "coreos-stable-647-2-0-v20150528"
+    default = "coreos-stable-681-0-0-v20150609"
 }
 
 variable "gce_machine_type" {
